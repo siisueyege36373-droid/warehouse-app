@@ -1,1 +1,896 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense - Система управления складом</title>
+    <style>
+        :root {
+            --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --sidebar-bg: #fff;
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --text-light: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- LOGIN PAGE --- */
+        #login-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-grad);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-bottom: 1.5rem;
+            color: #4b5563;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary-grad);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        /* --- MAIN APP LAYOUT --- */
+        #app {
+            display: none; /* Hidden by default */
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e5e7eb;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-grad);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .user-avatar:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+            transition: 0.2s;
+        }
+
+        .user-info h4 { font-size: 0.95rem; }
+        .user-info p { font-size: 0.75rem; color: var(--text-light); }
+
+        .nav-menu {
+            flex: 1;
+            padding: 1rem;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #f3f4f6;
+            color: #764ba2;
+            font-weight: 600;
+        }
+
+      .logout-btn {
+    /* 1. Убираем ВСЕ внешние отступы, которые толкают кнопку вниз */
+    margin: 0; 
+    
+    /* 2. Делаем кнопку компактнее */
+    padding: 6px 12px;
+    font-size: 14px;
+    
+    /* 3. Оформление */
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    cursor: pointer;
+    
+    /* 4. Центрирование иконки и текста */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    
+    /* 5. Чтобы кнопка не растягивалась на всю ширину, если она в блоке */
+    width: fit-content;
+}
+
+.logout-btn:hover {
+    background: #fecaca;
+}
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-title {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            color: #111827;
+        }
+
+        /* --- DASHBOARD --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid transparent;
+        }
+
+        .stat-card h3 { font-size: 2rem; margin: 0.5rem 0; }
+        .stat-card p { color: var(--text-light); font-size: 0.875rem; }
+
+        .stat-card.blue { border-color: var(--info); }
+        .stat-card.green { border-color: var(--success); }
+        .stat-card.purple { border-color: #764ba2; }
+        .stat-card.red { border-color: var(--danger); }
+
+        /* --- TABLES --- */
+        .table-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .table-controls {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-box {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover { background: #f9fafb; }
+
+        /* --- NEW: Progress Bar --- */
+        .stock-progress-container {
+            width: 100px;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .stock-progress-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        .badge-red { background: #fee2e2; color: #b91c1c; }
+        .badge-gray { background: #f3f4f6; color: #374151; }
+
+        /* Action Buttons */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.25rem;
+            margin: 0 0.1rem;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            background: white;
+        }
+        .btn-sm:hover { background: #f3f4f6; }
+        .btn-primary { background: var(--primary-grad); color: white; border: none; }
+        .btn-qty { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-export { background: #10b981 !important; }
+
+        /* --- HISTORY --- */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-left: 4px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-add { border-left-color: var(--success); }
+        .history-edit { border-left-color: var(--warning); }
+        .history-delete { border-left-color: var(--danger); }
+        .history-qty { border-left-color: var(--info); }
+
+        .history-details strong { display: block; margin-bottom: 0.2rem; }
+        .history-meta { font-size: 0.8rem; color: var(--text-light); }
+
+        /* --- MODAL --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 500px;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-cancel { background: #e5e7eb; color: #374151; width: auto; }
+        .btn-save { background: var(--primary-grad); color: white; width: auto; }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #app { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #e5e7eb; }
+            .nav-menu { display: flex; overflow-x: auto; padding: 0.5rem; }
+            .nav-item { margin: 0 0.5rem; white-space: nowrap; }
+            .main-content { padding: 1rem; }
+            .table-controls { flex-direction: column; align-items: stretch; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-page">
+        <div class="login-card">
+            <h2>🔐 Вход в систему</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Логин</label>
+                    <input type="text" id="username" class="form-control" placeholder="Введите логин" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="password" class="form-control" placeholder="Введите пароль" required>
+                </div>
+                <button type="submit" class="btn">Войти</button>
+                <p class="error-msg" id="login-error">Неверный логин или пароль</p>
+            </form>
+            <div style="margin-top: 15px; font-size: 0.8rem; color: #888;">
+                Тест: admin / admin123 <br> manager / manager123
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar" id="user-avatar" onclick="changeAvatar()" title="Нажмите, чтобы сменить аватар">A</div>
+                <div class="user-info">
+                    <h4 id="user-name">Имя пользователя</h4>
+                    <p id="user-role">Роль</p>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" onclick="showPage('dashboard')">📊 Главная</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="showPage('products')">📦 Товары</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="showPage('history')">📜 История</a>
+                </li>
+            </ul>
+            <button class="btn logout-btn" onclick="logout()">🚪 Выйти</button>
+        </aside>
+
+        <main class="main-content">
+            <section id="dashboard" class="section active">
+                <h2 class="header-title">Панель управления</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <p>Всего товаров (SKU)</p>
+                        <h3 id="stat-total-items">0</h3>
+                    </div>
+                    <div class="stat-card purple">
+                        <p>Общее количество (шт)</p>
+                        <h3 id="stat-total-qty">0</h3>
+                    </div>
+                    <div class="stat-card green">
+                        <p>Общая стоимость</p>
+                        <h3 id="stat-total-value">0 ₸</h3>
+                    </div>
+                    <div class="stat-card red">
+                        <p>Низкий запас</p>
+                        <h3 id="stat-low-stock">0</h3>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 1rem;">⚠️ Товары с низким запасом</h3>
+                <div class="table-container">
+                    <table id="low-stock-table">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Остаток</th>
+                                <th>Мин. запас</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="products" class="section">
+                <h2 class="header-title">Управление товарами</h2>
+                
+                <div class="table-container">
+                    <div class="table-controls">
+                        <input type="text" id="search-input" class="search-box" placeholder="🔍 Поиск по названию или категории..." onkeyup="renderProducts()">
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary btn-export" onclick="exportToCSV()" style="width: auto;">📥 Экспорт CSV</button>
+                            <button class="btn btn-primary" onclick="openModal()" style="width: auto;">➕ Добавить товар</button>
+                        </div>
+                    </div>
+                    <table id="products-table">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Категория</th>
+                                <th>Кол-во / Запас</th>
+                                <th>Цена (ед.)</th>
+                                <th>Итого</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="history" class="section">
+                <h2 class="header-title">Журнал операций</h2>
+                <div class="history-list" id="history-list">
+                    </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Добавить товар</h3>
+                <span style="cursor:pointer; font-size:1.5rem;" onclick="closeModal()">×</span>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>Название товара *</label>
+                    <input type="text" id="prod-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Категория</label>
+                    <input type="text" id="prod-cat" class="form-control">
+                </div>
+                <div class="form-group" style="display: flex; gap: 1rem;">
+                    <div style="flex:1">
+                        <label>Количество *</label>
+                        <input type="number" id="prod-qty" class="form-control" min="0" required>
+                    </div>
+                    <div style="flex:1">
+                        <label>Мин. запас</label>
+                        <input type="number" id="prod-min" class="form-control" value="10" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Цена за единицу (₸) *</label>
+                    <input type="number" id="prod-price" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-save">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STATE ---
+        let products = JSON.parse(localStorage.getItem('wms_products')) || [];
+        let historyLog = JSON.parse(localStorage.getItem('wms_history')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('wms_user')) || null;
+
+        // --- AUTH LOGIC ---
+        const loginPage = document.getElementById('login-page');
+        const appPage = document.getElementById('app');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+
+        if (currentUser) {
+            initApp();
+        } else {
+            loginPage.style.display = 'flex';
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+
+            let role = '';
+            if (u === 'admin' && p === 'admin123') role = 'Администратор';
+            else if (u === 'manager' && p === 'manager123') role = 'Менеджер';
+
+            if (role) {
+                const defaultAvatars = {
+                    'admin': 'https://cdn-icons-png.flaticon.com/512/2206/2206368.png',
+                    'manager': 'https://cdn-icons-png.flaticon.com/512/4140/4140048.png'
+                };
+
+                currentUser = { 
+                    name: u, 
+                    role: role,
+                    avatar: defaultAvatars[u] || '' 
+                };
+                
+                localStorage.setItem('wms_user', JSON.stringify(currentUser));
+                loginError.style.display = 'none';
+                initApp();
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('wms_user');
+            location.reload();
+        }
+
+        function initApp() {
+            loginPage.style.display = 'none';
+            appPage.style.display = 'flex';
+            
+            document.getElementById('user-name').textContent = currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1);
+            document.getElementById('user-role').textContent = currentUser.role;
+
+            const avatarEl = document.getElementById('user-avatar');
+            if (currentUser.avatar) {
+                avatarEl.style.backgroundImage = `url('${currentUser.avatar}')`;
+                avatarEl.textContent = ''; 
+            } else {
+                avatarEl.style.backgroundImage = 'none';
+                avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+
+            renderProducts();
+            renderDashboard();
+            renderHistory();
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            if(pageId === 'dashboard') renderDashboard();
+            if(pageId === 'history') renderHistory();
+        }
+
+        function saveProducts() {
+            localStorage.setItem('wms_products', JSON.stringify(products));
+            renderProducts();
+            renderDashboard();
+        }
+
+        function formatCurrency(num) {
+            return new Intl.NumberFormat('ru-RU').format(num) + ' ₸';
+        }
+
+        function getStatus(qty, min) {
+            if (qty == 0) return { label: 'Нет на складе', class: 'badge-gray', color: '#ef4444' };
+            if (qty <= min) return { label: 'Низкий запас', class: 'badge-red', color: '#ef4444' };
+            if (qty <= min * 2) return { label: 'Средний запас', class: 'badge-yellow', color: '#f59e0b' };
+            return { label: 'В наличии', class: 'badge-green', color: '#10b981' };
+        }
+
+        function renderProducts() {
+            const tbody = document.querySelector('#products-table tbody');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            const filtered = products.filter(p => 
+                p.name.toLowerCase().includes(search) || 
+                p.category.toLowerCase().includes(search)
+            );
+
+            filtered.forEach(p => {
+                const status = getStatus(p.quantity, p.minStock);
+                const total = p.quantity * p.price;
+                
+                // Рассчет ширины прогресс-бара (макс 100%)
+                const progressWidth = Math.min((p.quantity / (p.minStock * 3)) * 100, 100);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${p.name}</strong></td>
+                    <td>${p.category}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button class="btn-sm btn-qty" onclick="updateStock('${p.id}', -1)">➖</button>
+                            <span style="font-weight:bold; width:30px; text-align:center;">${p.quantity}</span>
+                            <button class="btn-sm btn-qty" onclick="updateStock('${p.id}', 1)">➕</button>
+                        </div>
+                        <div class="stock-progress-container">
+                            <div class="stock-progress-bar" style="width: ${progressWidth}%; background-color: ${status.color}"></div>
+                        </div>
+                    </td>
+                    <td>${formatCurrency(p.price)}</td>
+                    <td>${formatCurrency(total)}</td>
+                    <td><span class="badge ${status.class}">${status.label}</span></td>
+                    <td>
+                        <button class="btn-sm" onclick="editProduct('${p.id}')" title="Редактировать">✏️</button>
+                        <button class="btn-sm" onclick="deleteProduct('${p.id}')" title="Удалить" style="color:red;">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStock(id, change) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            if (p.quantity + change < 0) return;
+
+            p.quantity += change;
+            const type = change > 0 ? "Поступление" : "Списание";
+            addHistoryLog(`${type}: ${p.name} (${Math.abs(change)} шт.)`, "qty");
+            saveProducts();
+        }
+
+        const modal = document.getElementById('product-modal');
+        const productForm = document.getElementById('product-form');
+
+        function openModal(editId = null) {
+            modal.classList.add('active');
+            productForm.reset();
+            if (editId) {
+                const p = products.find(x => x.id === editId);
+                document.getElementById('modal-title').textContent = 'Редактировать товар';
+                document.getElementById('product-id').value = p.id;
+                document.getElementById('prod-name').value = p.name;
+                document.getElementById('prod-cat').value = p.category;
+                document.getElementById('prod-qty').value = p.quantity;
+                document.getElementById('prod-min').value = p.minStock;
+                document.getElementById('prod-price').value = p.price;
+            } else {
+                document.getElementById('modal-title').textContent = 'Добавить товар';
+                document.getElementById('product-id').value = '';
+            }
+        }
+
+        function closeModal() { modal.classList.remove('active'); }
+        function editProduct(id) { openModal(id); }
+
+        function deleteProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (confirm(`Удалить "${p.name}"?`)) {
+                products = products.filter(x => x.id !== id);
+                addHistoryLog(`Удален товар ${p.name}`, "delete");
+                saveProducts();
+            }
+        }
+
+        productForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const name = document.getElementById('prod-name').value;
+            const cat = document.getElementById('prod-cat').value || 'Без категории';
+            const qty = parseInt(document.getElementById('prod-qty').value);
+            const min = parseInt(document.getElementById('prod-min').value);
+            const price = parseFloat(document.getElementById('prod-price').value);
+
+            if (id) {
+                const p = products.find(x => x.id === id);
+                Object.assign(p, {name, category: cat, quantity: qty, minStock: min, price});
+                addHistoryLog(`Изменен товар ${name}`, "edit");
+            } else {
+                products.push({id: Date.now().toString(), name, category: cat, quantity: qty, minStock: min, price});
+                addHistoryLog(`Добавлен товар ${name}`, "add");
+            }
+            saveProducts();
+            closeModal();
+        });
+
+        function renderDashboard() {
+            const lowStockItems = products.filter(p => p.quantity <= p.minStock);
+            document.getElementById('stat-total-items').textContent = products.length;
+            document.getElementById('stat-total-qty').textContent = products.reduce((acc, p) => acc + p.quantity, 0);
+            document.getElementById('stat-total-value').textContent = formatCurrency(products.reduce((acc, p) => acc + (p.quantity * p.price), 0));
+            document.getElementById('stat-low-stock').textContent = lowStockItems.length;
+
+            const tbody = document.querySelector('#low-stock-table tbody');
+            tbody.innerHTML = lowStockItems.length ? '' : '<tr><td colspan="4" style="text-align:center; color:#888;">Нет товаров с низким запасом</td></tr>';
+            lowStockItems.forEach(p => {
+                const status = getStatus(p.quantity, p.minStock);
+                tbody.innerHTML += `<tr><td>${p.name}</td><td style="color:var(--danger); font-weight:bold;">${p.quantity}</td><td>${p.minStock}</td><td><span class="badge ${status.class}">${status.label}</span></td></tr>`;
+            });
+        }
+
+        function addHistoryLog(text, type) {
+            historyLog.unshift({text, type, user: currentUser.name, date: new Date().toLocaleString("ru-RU")});
+            localStorage.setItem('wms_history', JSON.stringify(historyLog));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+            const typeMap = {'add': 'history-add', 'edit': 'history-edit', 'delete': 'history-delete', 'qty': 'history-qty'};
+            historyLog.forEach(h => {
+                const div = document.createElement('div');
+                div.className = `history-item ${typeMap[h.type] || ''}`;
+                div.innerHTML = `<div class="history-details"><strong>${h.text}</strong><span class="history-meta">Пользователь: ${h.user}</span></div><div class="history-meta">${h.date}</div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function changeAvatar() {
+            const newUrl = prompt("Введите URL ссылки на аватар:", currentUser.avatar || "");
+            if (newUrl !== null) {
+                currentUser.avatar = newUrl;
+                localStorage.setItem('wms_user', JSON.stringify(currentUser));
+                initApp();
+                addHistoryLog(`Пользователь сменил аватар`, "edit");
+            }
+        }
+
+        // --- NEW: Экспорт в CSV ---
+    function exportToCSV() {
+    if (products.length === 0) {
+        alert("Нет товаров для экспорта!");
+        return;
+    }
+    
+    // Заголовки таблицы
+    let csvContent = "ID;Название;Категория;Количество;Мин. запас;Цена;Итого\n";
+    
+    // Формируем строки
+    products.forEach(p => {
+        const row = [
+            p.id, 
+            p.name, 
+            p.category, 
+            p.quantity, 
+            p.minStock, 
+            p.price, 
+            (p.quantity * p.price)
+        ];
+        csvContent += row.join(";") + "\n";
+    });
+
+    // --- ИСПРАВЛЕНИЕ ТУТ ---
+    // Добавляем BOM (\uFEFF), чтобы Excel распознал кириллицу и структуру
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `sklad_export_${new Date().toLocaleDateString()}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+    </script>
+</body>
+</html>
